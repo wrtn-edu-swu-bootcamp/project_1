@@ -1,0 +1,30 @@
+# MCP Project
+
+이 프로젝트는 GitHub 저장소와 연동되어 있습니다.
+
+## GitHub 저장소 연동 방법
+
+다음 명령어를 순서대로 실행하세요:
+
+```bash
+# 1. Git 저장소 초기화 (아직 초기화하지 않았다면)
+git init
+
+# 2. 원격 저장소 추가
+git remote add origin https://github.com/wrtn-edu-swu-bootcamp/project_48.git
+
+# 3. 파일 추가
+git add .
+
+# 4. 첫 커밋
+git commit -m "Initial commit"
+
+# 5. 원격 저장소로 푸시
+git branch -M main
+git push -u origin main
+```
+
+## 참고사항
+
+- Git이 설치되어 있지 않다면 [Git 공식 사이트](https://git-scm.com/download/win)에서 다운로드하세요.
+- 이미 원격 저장소에 파일이 있다면 `git pull origin main --allow-unrelated-histories` 명령어를 먼저 실행하세요.

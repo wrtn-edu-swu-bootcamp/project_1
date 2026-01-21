@@ -25,11 +25,11 @@ if (-not (Test-Path .git)) {
 $remoteExists = git remote get-url origin 2>$null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "원격 저장소를 추가합니다..." -ForegroundColor Yellow
-    git remote add origin https://github.com/wrtn-edu-swu-bootcamp/project_48.git
+    git remote add origin https://github.com/wrtn-edu-swu-bootcamp/project_1.git
 } else {
     Write-Host "원격 저장소가 이미 설정되어 있습니다: $remoteExists" -ForegroundColor Yellow
     Write-Host "원격 저장소를 업데이트합니다..." -ForegroundColor Yellow
-    git remote set-url origin https://github.com/wrtn-edu-swu-bootcamp/project_48.git
+    git remote set-url origin https://github.com/wrtn-edu-swu-bootcamp/project_1.git
 }
 
 # 파일 추가

@@ -3,6 +3,94 @@ FitPlan AI - 운동 플랜 생성 데모
 사용자 신체 정보를 바탕으로 맞춤형 운동 플랜을 생성합니다.
 """
 
+import json
+import os
+from datetime import datetime
+
+
+class ProfileManager:
+    """프로필 저장/불러오기 관리 클래스"""
+    
+    def __init__(self, filename="profiles.json"):
+        self.filename = filename
+        self.profiles = self.load_profiles()
+    
+    def load_profiles(self):
+        """저장된 프로필 불러오기"""
+        if os.path.exists(self.filename):
+            try:
+                with open(self.filename, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"⚠️  프로필 파일을 읽는 중 오류가 발생했습니다: {e}")
+                return {}
+        return {}
+    
+    def save_profiles(self):
+        """프로필을 파일에 저장"""
+        try:
+            with open(self.filename, 'w', encoding='utf-8') as f:
+                json.dump(self.profiles, f, ensure_ascii=False, indent=2)
+            return True
+        except Exception as e:
+            print(f"❌ 프로필 저장 중 오류가 발생했습니다: {e}")
+            return False
+    
+    def add_profile(self, nickname, profile_data):
+        """새 프로필 추가"""
+        self.profiles[nickname] = {
+            **profile_data,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        return self.save_profiles()
+    
+    def update_profile(self, nickname, profile_data):
+        """기존 프로필 업데이트"""
+        if nickname in self.profiles:
+            created_at = self.profiles[nickname].get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            self.profiles[nickname] = {
+                **profile_data,
+                "created_at": created_at,
+                "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            return self.save_profiles()
+        return False
+    
+    def get_profile(self, nickname):
+        """프로필 불러오기"""
+        return self.profiles.get(nickname)
+    
+    def delete_profile(self, nickname):
+        """프로필 삭제"""
+        if nickname in self.profiles:
+            del self.profiles[nickname]
+            return self.save_profiles()
+        return False
+    
+    def list_profiles(self):
+        """모든 프로필 목록 반환"""
+        return list(self.profiles.keys())
+    
+    def print_profile_list(self):
+        """프로필 목록 출력"""
+        if not self.profiles:
+            print("\n저장된 프로필이 없습니다.")
+            return
+        
+        print("\n" + "=" * 60)
+        print("📋 저장된 프로필 목록")
+        print("=" * 60)
+        
+        for idx, (nickname, data) in enumerate(self.profiles.items(), 1):
+            print(f"\n{idx}. {nickname}")
+            print(f"   - 성별: {data.get('gender', 'N/A')}, 나이: {data.get('age', 'N/A')}세")
+            print(f"   - 키: {data.get('height', 'N/A')}cm, 몸무게: {data.get('weight', 'N/A')}kg")
+            print(f"   - 마지막 업데이트: {data.get('updated_at', 'N/A')}")
+        
+        print("\n" + "=" * 60)
+
+
 class UserInput:
     """사용자 입력 수집 클래스"""
     
@@ -1903,11 +1991,150 @@ def main():
     
     print("\n환영합니다! 맞춤형 운동 플랜을 생성하기 위해 몇 가지 질문을 드리겠습니다.")
     
-    # 1단계: 필수 정보 수집
-    height, weight, age, gender = UserInput.get_required_info()
+    # 프로필 매니저 초기화
+    profile_manager = ProfileManager()
+    current_nickname = None
     
-    # 2단계: 선택 정보 수집
-    body_fat, skeletal_muscle = UserInput.get_optional_info()
+    # 저장된 프로필 확인
+    if profile_manager.list_profiles():
+        print("\n" + "=" * 60)
+        print("💾 프로필 선택")
+        print("=" * 60)
+        print("\n1. 저장된 프로필 불러오기")
+        print("2. 새 프로필 만들기")
+        print("3. 프로필 관리 (삭제)")
+        
+        while True:
+            choice = input("\n선택하세요 (1-3): ").strip()
+            
+            if choice == "1":
+                # 프로필 불러오기
+                profile_manager.print_profile_list()
+                profiles = profile_manager.list_profiles()
+                
+                print("\n프로필 별명을 입력하세요:")
+                nickname = input("별명: ").strip()
+                
+                if nickname in profiles:
+                    profile_data = profile_manager.get_profile(nickname)
+                    current_nickname = nickname
+                    
+                    # 프로필 데이터로 사용자 객체 생성
+                    height = profile_data['height']
+                    weight = profile_data['weight']
+                    age = profile_data['age']
+                    gender = profile_data['gender']
+                    body_fat = profile_data.get('body_fat_percentage')
+                    skeletal_muscle = profile_data.get('skeletal_muscle_mass')
+                    
+                    print(f"\n✅ '{nickname}' 프로필을 불러왔습니다!")
+                    break
+                else:
+                    print(f"\n❌ '{nickname}' 프로필을 찾을 수 없습니다.")
+                    continue
+            
+            elif choice == "2":
+                # 새 프로필 만들기
+                print("\n새 프로필을 만듭니다.")
+                
+                # 1단계: 필수 정보 수집
+                height, weight, age, gender = UserInput.get_required_info()
+                
+                # 2단계: 선택 정보 수집
+                body_fat, skeletal_muscle = UserInput.get_optional_info()
+                
+                # 프로필 별명 입력
+                print("\n" + "=" * 60)
+                print("💾 프로필 저장")
+                print("=" * 60)
+                
+                while True:
+                    nickname = input("\n프로필 별명을 입력하세요 (예: 플레이어1, 엄마, 아빠): ").strip()
+                    
+                    if not nickname:
+                        print("❌ 별명을 입력해주세요.")
+                        continue
+                    
+                    if nickname in profile_manager.list_profiles():
+                        overwrite = input(f"\n'{nickname}' 프로필이 이미 존재합니다. 덮어쓰시겠습니까? (y/n): ").strip().lower()
+                        if overwrite == 'y' or overwrite == 'yes':
+                            current_nickname = nickname
+                            break
+                        else:
+                            continue
+                    else:
+                        current_nickname = nickname
+                        break
+                
+                # 프로필 저장
+                profile_data = {
+                    'height': height,
+                    'weight': weight,
+                    'age': age,
+                    'gender': gender,
+                    'body_fat_percentage': body_fat,
+                    'skeletal_muscle_mass': skeletal_muscle
+                }
+                
+                if profile_manager.add_profile(current_nickname, profile_data):
+                    print(f"\n✅ '{current_nickname}' 프로필이 저장되었습니다!")
+                else:
+                    print("\n❌ 프로필 저장에 실패했습니다.")
+                
+                break
+            
+            elif choice == "3":
+                # 프로필 관리
+                profile_manager.print_profile_list()
+                
+                delete_nickname = input("\n삭제할 프로필 별명 (취소하려면 Enter): ").strip()
+                
+                if delete_nickname:
+                    if profile_manager.delete_profile(delete_nickname):
+                        print(f"\n✅ '{delete_nickname}' 프로필이 삭제되었습니다.")
+                    else:
+                        print(f"\n❌ '{delete_nickname}' 프로필을 찾을 수 없습니다.")
+                
+                continue
+            
+            else:
+                print("❌ 1-3 사이의 숫자를 입력해주세요.")
+    
+    else:
+        # 저장된 프로필이 없으면 새로 만들기
+        print("\n저장된 프로필이 없습니다. 새 프로필을 만듭니다.")
+        
+        # 1단계: 필수 정보 수집
+        height, weight, age, gender = UserInput.get_required_info()
+        
+        # 2단계: 선택 정보 수집
+        body_fat, skeletal_muscle = UserInput.get_optional_info()
+        
+        # 프로필 저장 여부 확인
+        save_profile = input("\n이 프로필을 저장하시겠습니까? (y/n): ").strip().lower()
+        
+        if save_profile == 'y' or save_profile == 'yes':
+            while True:
+                nickname = input("프로필 별명을 입력하세요 (예: 플레이어1, 엄마, 아빠): ").strip()
+                
+                if nickname:
+                    current_nickname = nickname
+                    profile_data = {
+                        'height': height,
+                        'weight': weight,
+                        'age': age,
+                        'gender': gender,
+                        'body_fat_percentage': body_fat,
+                        'skeletal_muscle_mass': skeletal_muscle
+                    }
+                    
+                    if profile_manager.add_profile(current_nickname, profile_data):
+                        print(f"\n✅ '{current_nickname}' 프로필이 저장되었습니다!")
+                    else:
+                        print("\n❌ 프로필 저장에 실패했습니다.")
+                    break
+                else:
+                    print("❌ 별명을 입력해주세요.")
     
     # 사용자 프로필 생성
     user = UserProfile(
@@ -1922,23 +2149,60 @@ def main():
     # 프로필 출력
     user.print_profile()
     
-    # 3단계: 운동 목표 선택
-    goal = UserInput.get_fitness_goal()
-    
-    # 4단계: 운동 환경 선택
-    environment = UserInput.get_workout_environment()
-    
-    # 5단계: 주간 운동 빈도
-    frequency = UserInput.get_workout_frequency()
-    
-    # 6단계: 1회 운동 시간
-    duration = UserInput.get_workout_duration()
-    
-    # 7단계: 지병 확인
-    medical_conditions = UserInput.get_medical_conditions()
-    
-    # 8단계: 통증 부위 확인
-    pain_areas = UserInput.get_pain_areas()
+    # 저장된 운동 계획 정보가 있는지 확인
+    if current_nickname:
+        saved_profile = profile_manager.get_profile(current_nickname)
+        
+        has_workout_plan = all(key in saved_profile for key in ['goal', 'environment', 'frequency', 'duration'])
+        
+        if has_workout_plan:
+            print("\n" + "=" * 60)
+            print("💾 저장된 운동 계획 정보")
+            print("=" * 60)
+            print(f"\n🎯 운동 목표: {saved_profile.get('goal')}")
+            print(f"🏋️ 운동 환경: {saved_profile.get('environment')}")
+            print(f"📅 주간 운동 빈도: 주 {saved_profile.get('frequency')}회")
+            print(f"⏱  1회 운동 시간: {saved_profile.get('duration')}분")
+            if saved_profile.get('medical_conditions'):
+                print(f"💊 지병: {', '.join(saved_profile.get('medical_conditions'))}")
+            if saved_profile.get('pain_areas'):
+                print(f"⚠️  통증 부위: {', '.join(saved_profile.get('pain_areas'))}")
+            
+            use_saved = input("\n저장된 운동 계획을 사용하시겠습니까? (y/n): ").strip().lower()
+            
+            if use_saved == 'y' or use_saved == 'yes':
+                goal = saved_profile.get('goal')
+                environment = saved_profile.get('environment')
+                frequency = saved_profile.get('frequency')
+                duration = saved_profile.get('duration')
+                medical_conditions = saved_profile.get('medical_conditions', [])
+                pain_areas = saved_profile.get('pain_areas', [])
+                
+                print("\n✅ 저장된 운동 계획을 불러왔습니다!")
+            else:
+                # 새로 입력받기
+                goal = UserInput.get_fitness_goal()
+                environment = UserInput.get_workout_environment()
+                frequency = UserInput.get_workout_frequency()
+                duration = UserInput.get_workout_duration()
+                medical_conditions = UserInput.get_medical_conditions()
+                pain_areas = UserInput.get_pain_areas()
+        else:
+            # 저장된 운동 계획이 없으면 새로 입력받기
+            goal = UserInput.get_fitness_goal()
+            environment = UserInput.get_workout_environment()
+            frequency = UserInput.get_workout_frequency()
+            duration = UserInput.get_workout_duration()
+            medical_conditions = UserInput.get_medical_conditions()
+            pain_areas = UserInput.get_pain_areas()
+    else:
+        # 프로필을 저장하지 않았으면 새로 입력받기
+        goal = UserInput.get_fitness_goal()
+        environment = UserInput.get_workout_environment()
+        frequency = UserInput.get_workout_frequency()
+        duration = UserInput.get_workout_duration()
+        medical_conditions = UserInput.get_medical_conditions()
+        pain_areas = UserInput.get_pain_areas()
     
     # 입력 확인
     print("\n" + "=" * 60)
@@ -1992,6 +2256,31 @@ def main():
     
     # 운동 팁 출력
     planner.print_tips()
+    
+    # 프로필 업데이트 (운동 계획 정보 포함)
+    if current_nickname:
+        update_choice = input("\n프로필에 운동 계획 정보를 업데이트하시겠습니까? (y/n): ").strip().lower()
+        
+        if update_choice == 'y' or update_choice == 'yes':
+            profile_data = {
+                'height': height,
+                'weight': weight,
+                'age': age,
+                'gender': gender,
+                'body_fat_percentage': body_fat,
+                'skeletal_muscle_mass': skeletal_muscle,
+                'goal': goal,
+                'environment': environment,
+                'frequency': frequency,
+                'duration': duration,
+                'medical_conditions': medical_conditions,
+                'pain_areas': pain_areas
+            }
+            
+            if profile_manager.update_profile(current_nickname, profile_data):
+                print(f"\n✅ '{current_nickname}' 프로필이 업데이트되었습니다!")
+            else:
+                print("\n❌ 프로필 업데이트에 실패했습니다.")
     
     print("\n" + "=" * 60)
     print("✨ FitPlan AI와 함께 건강한 변화를 시작하세요! ✨")

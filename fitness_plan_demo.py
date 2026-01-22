@@ -126,9 +126,11 @@ class UserInput:
                 print("❌ 숫자로 입력해주세요.")
         
         # 나이 입력
+        print("\n💡 팁: 만 나이를 입력해주세요")
+        print("   (예: 2000년생은 2026년 기준 만 25-26세)")
         while True:
             try:
-                age = input("나이를 입력하세요 (만 나이): ").strip()
+                age = input("\n나이를 입력하세요 (만 나이): ").strip()
                 age = int(age)
                 if 10 <= age <= 100:
                     break
@@ -594,13 +596,20 @@ class FitnessPlanGenerator:
         self.pain_areas = pain_areas or []
         self.medical_conditions = medical_conditions or []
         
-        # 성별에 따른 강도/반복 설정
-        if self.user.gender == "남성":
+        # 나이 및 성별에 따른 강도/반복 설정
+        # 고령자(60세 이상)는 부상 방지를 위해 저강도 고반복 권장
+        if self.user.age >= 60:
+            self.rep_range = "12-15회"  # 저강도 고반복
+            self.rep_description = "저강도 고반복 (고령자 안전 운동 - 관절 보호 및 근력 유지)"
+            self.is_senior = True
+        elif self.user.gender == "남성":
             self.rep_range = "6-10회"  # 고강도 저반복
             self.rep_description = "고강도 저반복 (근력 및 근비대 중심)"
+            self.is_senior = False
         else:  # 여성
             self.rep_range = "12-15회"  # 저강도 고반복
             self.rep_description = "저강도 고반복 (근지구력 및 탄탄한 몸매 중심)"
+            self.is_senior = False
     
     def get_cardio_details(self):
         """목표에 따른 유산소 운동 상세 정보"""
@@ -1098,8 +1107,12 @@ class FitnessPlanGenerator:
         workouts = []
         days = ["월요일", "화요일", "목요일", "금요일"]
         
-        # 성별에 따른 반복 횟수
-        if self.user.gender == "남성":
+        # 나이와 성별에 따른 반복 횟수
+        if self.user.age >= 60:  # 고령자
+            main_reps = "12-15회"
+            secondary_reps = "15-18회"
+            accessory_reps = "18-20회"
+        elif self.user.gender == "남성":
             main_reps = "6-8회"
             secondary_reps = "8-10회"
             accessory_reps = "10-12회"
@@ -1399,6 +1412,17 @@ class FitnessPlanGenerator:
         print(f"\n🎯 운동 목표: {plan['목표']}")
         print(f"📅 주간 운동일: {plan['주간_운동일']}일")
         print(f"⏱  1회 운동 시간: {plan['운동_시간']}")
+        
+        # 고령자를 위한 안내
+        if self.user.age >= 60:
+            print("\n" + "⚠️ " * 30)
+            print("👴👵 고령자 맞춤 안전 운동 플랜")
+            print("=" * 60)
+            print("귀하의 연령({age}세)을 고려하여 관절과 근육을 보호하는".format(age=self.user.age))
+            print("저강도 고반복 운동 플랜으로 구성되었습니다.")
+            print("무게는 가볍게 시작하여 천천히 증가시키세요.")
+            print("=" * 60)
+        
         print("\n" + "-" * 60)
         
         for idx, day_plan in enumerate(plan["주간_계획"], 1):
@@ -1743,7 +1767,15 @@ class FitnessPlanGenerator:
         print("📌 무게 선택 가이드")
         print("-" * 60)
         
-        if self.user.gender == "남성":
+        if self.user.age >= 60:
+            print("\n  👴👵 고령자 (저강도 고반복 - 안전 중심):")
+            print("  • ⚠️  위 추천 무게의 50-60% 수준으로 시작하세요")
+            print("  • 목표 반복 횟수를 편안하게 완료할 수 있는 무게 사용")
+            print("  • 무게보다 정확한 자세와 균형 유지가 더 중요합니다")
+            print("  • 관절에 무리가 가지 않는 범위 내에서만 운동하세요")
+            print("  • 매주 증가량은 1-2kg 이하로 천천히 증가시키세요")
+            print("  • 통증이나 불편함이 느껴지면 즉시 중단하세요")
+        elif self.user.gender == "남성":
             print("\n  남성 (고강도 저반복):")
             print("  • 목표 반복 횟수의 마지막 1-2개가 힘들어야 합니다")
             print("  • 세트 마지막에 더 이상 들 수 없는 무게가 적절합니다")
@@ -1957,6 +1989,25 @@ class FitnessPlanGenerator:
         print("\n" + "=" * 60)
         print("💡 운동 성공을 위한 팁")
         print("=" * 60)
+        
+        # 고령자를 위한 특별 팁
+        if self.user.age >= 60:
+            print("\n⚠️  고령자 맞춤 운동 주의사항")
+            print("-" * 60)
+            senior_tips = [
+                "매우 가벼운 무게로 시작하여 천천히 증가시키세요",
+                "관절에 무리가 가는 고중량 운동은 피하세요",
+                "균형 운동을 꼭 포함하여 낙상을 예방하세요",
+                "탈수 방지를 위해 운동 중 자주 물을 마시세요",
+                "운동 전후 충분한 워밍업(10-15분)과 스트레칭(10분) 필수",
+                "어지럼증이나 가슴 통증 발생 시 즉시 중단하고 의사 상담",
+                "약물 복용 중이라면 운동 시작 전 의사와 상담하세요",
+                "가능하면 트레이너나 동반자와 함께 운동하세요"
+            ]
+            for idx, tip in enumerate(senior_tips, 1):
+                print(f"  {idx}. {tip}")
+            print("\n" + "-" * 60)
+            print("📌 일반 운동 팁")
         
         tips = [
             "워밍업은 필수! 운동 전 5-10분 가벼운 유산소와 동적 스트레칭",

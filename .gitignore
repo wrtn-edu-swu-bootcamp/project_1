@@ -30,3 +30,6 @@ __pycache__/
 # Environment variables
 .env
 .env.local
+
+# User profiles (personal data)
+profiles.json
